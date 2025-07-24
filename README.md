@@ -18,8 +18,34 @@ keepalive-printer/
 ├── keepalive.py              # Cross-platform Python script with port discovery
 ├── winservice.py             # Windows service implementation
 ├── ToshibaKeepAlive.psm1     # PowerShell module for Windows
+├── requirements.txt          # Python dependencies
 └── README.md                 # This file
 ```
+
+## 📦 Installation
+
+### Prerequisites
+
+- **Python 3.6+** for Python scripts
+- **PowerShell 5.1+** for PowerShell module (Windows only)
+
+### Install Dependencies
+
+1. **Clone or download** this repository
+2. **Install Python dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Dependency Details
+
+- **`pywin32`** (Windows only): Required **only** for Windows service functionality (`winservice.py`)
+- **All other modules**: Built into Python standard library (socket, time, logging, datetime, threading, typing)
+
+**Note**: 
+- The main script (`keepalive.py`) works on all platforms without any dependencies
+- Only install `pywin32` if you plan to use the Windows service option
+- On macOS/Linux, you can skip `pip install -r requirements.txt` entirely
 
 ## 🔧 Configuration
 
@@ -34,9 +60,13 @@ All scripts are pre-configured for:
 ### Option 1: Python Script (Recommended - Cross-platform)
 
 1. **Install Python 3.6+** if not already installed
-2. **Run the script**:
+2. **Run the script directly** (no dependencies needed):
    ```bash
    python keepalive.py
+   ```
+   *Or install dependencies if you plan to use Windows service later:*
+   ```bash
+   pip install -r requirements.txt
    ```
 3. **The script will automatically**:
    - Scan for open ports on your printer
@@ -70,12 +100,16 @@ Starting keep-alive service for 192.168.1.27:9100
 
 For production environments where you want the service to start automatically with Windows:
 
-1. **Open Command Prompt as Administrator**
-2. **Install the service**:
+1. **Install dependencies**:
+   ```cmd
+   pip install -r requirements.txt
+   ```
+2. **Open Command Prompt as Administrator**
+3. **Install the service**:
    ```cmd
    python winservice.py install
    ```
-3. **Start the service**:
+4. **Start the service**:
    ```cmd
    python winservice.py start
    ```

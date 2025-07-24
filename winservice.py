@@ -43,23 +43,42 @@ class PrinterKeepAliveService(win32serviceutil.ServiceFramework):
         self.is_running = True
 
         # Configuration - can be read from config file or registry
-        self.printer_ip = "192.168.1.27"  # Updated printer IP
+        self.printer_ip = "192.168.1.27"
         self.printer_port = 9100
         self.interval = 30  # seconds
         self.keepalive_command = b"\x1b@\x1bA\x1bZ"
         self.max_failures = 10
         self.consecutive_failures = 0
 
-        # Setup logging
-        log_path = os.path.join(
-            os.path.dirname(__file__), "printer_keepalive_service.log"
-        )
+        # Setup logging with proper service-friendly paths
+        log_dir = r"C:\Logs\ToshibaPrinterKeepAlive"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        log_path = os.path.join(log_dir, "printer_keepalive_service.log")
+        
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[logging.FileHandler(log_path), logging.StreamHandler()],
+            handlers=[logging.FileHandler(log_path)],  # Removed console handler for service
         )
         self.logger = logging.getLogger(__name__)
+
+        # Auto-discover port if default doesn't work
+        if not self.test_connection():
+            self.logger.info("Default port not responding, attempting auto-discovery...")
+            open_ports = discover_printer_ports(self.printer_ip)
+            if open_ports:
+                self.printer_port = open_ports[0]
+                self.logger.info(f"Auto-discovered printer port: {self.printer_port}")
+
+    def get_retry_delay(self):
+        """Get delay based on consecutive failures (exponential backoff)"""
+        if self.consecutive_failures <= 3:
+            return self.interval
+        elif self.consecutive_failures <= 6:
+            return self.interval * 2
+        else:
+            return self.interval * 4  # Max delay
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
@@ -128,11 +147,11 @@ class PrinterKeepAliveService(win32serviceutil.ServiceFramework):
                     
                     if self.consecutive_failures >= self.max_failures:
                         self.logger.error(f"Max failures ({self.max_failures}) reached. Will keep trying...")
-                        # Don't break, keep trying - this is a service that should be resilient
 
-                # Wait for interval or stop event
+                # Use exponential backoff for retry delay
+                delay = self.get_retry_delay()
                 if (
-                    win32event.WaitForSingleObject(self.hWaitStop, self.interval * 1000)
+                    win32event.WaitForSingleObject(self.hWaitStop, int(delay * 1000))
                     == win32event.WAIT_OBJECT_0
                 ):
                     break

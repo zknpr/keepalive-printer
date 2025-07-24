@@ -143,7 +143,7 @@ class PrinterKeepAlive:
         while self.running:
             try:
                 if self.send_keepalive():
-                    self.logger.debug("Keep-alive sent successfully")
+                    self.logger.info("Keep-alive sent successfully")
                 else:
                     if self.consecutive_failures >= self.max_failures:
                         self.logger.error(
@@ -169,7 +169,7 @@ class PrinterKeepAlive:
 
 
 # Configuration
-PRINTER_IP = "192.168.1.27"  # Updated printer IP
+PRINTER_IP = "192.168.1.13"  # Updated printer IP
 PRINTER_PORT = 9100
 KEEPALIVE_INTERVAL = 30  # seconds
 
